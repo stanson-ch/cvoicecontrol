@@ -6,17 +6,17 @@ CVoiceControl INSTALL                                <11 Feb 00 14:04>
 Instructions on how to install CVoiceControl:
 =============================================
 
-Libraries needed: NCurses, PThread
-
+Libraries needed: libncurses, libpthread
+Libraries optional: libasound
 
 These are generic installation instructions:
 ============================================
 
 1. `cd' to the directory containing the package's source code and type
-   `./configure' to configure the package for your system.  If you're
-   using `csh' on an old version of System V, you might need to type
-   `sh ./configure' instead to prevent `csh' from trying to execute
-   `configure' itself.
+   `autoreconf -i`, then type `./configure' to configure the package
+   for your system.  If you're using `csh' on an old version of System
+   V, you might need to type `sh ./configure' instead to prevent `csh'
+   from trying to execute `configure' itself.
 
    Running `configure' takes a while.  While running, it prints some
    messages telling which features it is checking for.
