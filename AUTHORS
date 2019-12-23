@@ -16,6 +16,11 @@ CVoiceControl AUTHORS                                <11 Feb 00 14:07>
 
 - (none)
 
+******************************
+***      ALSA support      ***
+******************************
+
+- Stanson <me@stanson.ch>
 
 **********************************************************************
 CVoiceControl contains sourcecode from the following programs/classes:
