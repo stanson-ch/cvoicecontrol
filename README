@@ -1,0 +1,28 @@
+======================================================================
+CVoiceControl README                                 <21 Feb 00 11:15>
+======================================================================
+
+CVoiceControl is a simple speech recognition system that can
+recognize isolated words in a speaker dependent fashion.
+
+Installation:
+-------------
+
+See the file INSTALL for further information on how to install
+CVoiceControl.
+
+User Manual:
+-----------
+
+See the online help for information on how to use the program.
+By default this HTML documentation is located in
+
+  /usr/local/share/doc/cvoicecontrol/html/
+
+on Debian systems it is in
+
+  /usr/share/doc/cvoicecontrol/html/
+
+
+
+Have fun!

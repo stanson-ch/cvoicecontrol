@@ -1,0 +1,194 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The CVoiceControl Handbook: Questions and Answers</TITLE>
+ <LINK HREF="index-6.html" REL=next>
+ <LINK HREF="index-4.html" REL=previous>
+ <LINK HREF="index.html#toc5" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="index-6.html">Next</A>
+<A HREF="index-4.html">Previous</A>
+<A HREF="index.html#toc5">Contents</A>
+<HR>
+<H2><A NAME="s5">5. Questions and Answers</A></H2>
+
+<P>
+<P><B>Summary:</B>
+<P>
+<P><B>Q:</B> <B>What will happen to KVoiceControl?</B>
+<P><B>Q:</B> <B>Can I use KVoiceControl speaker models with CVoiceControl?</B>
+<P><B>Q:</B> <B>CVoiceControl rejects too many utterances. What can I do?</B>
+<P><B>Q:</B> <B>How can I make sure my sound card and sound driver work properly?</B>
+<P><B>Q:</B> <B><EM>Configure</EM>, <EM>make</EM> and <EM>make install</EM> work fine,
+but when I try to launch <EM>microphone_config</EM> it just exits with
+<CODE>Segmentation Fault</CODE>. What can I do?</B>
+<P>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+
+
+
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<P><B>Q:</B> <B>What will happen to KVoiceControl?</B>
+<P>
+<P><B>A:</B> Many people asked me for a console based
+version of KVoiceControl. These people want to be able to use
+speech recognition without having to run the KDE desktop environment or even X windows.
+That's why I created CVoiceControl.
+Further development will therefore be concentrated on CVoiceControl.
+Nevertheless, the latest version of KVoiceControl can still be
+downloaded from 
+<A HREF="http://www.kiecza.de/daniel/">http://www.kiecza.de/daniel/</A>.
+<P><B>Q:</B> <B>Can I use KVoiceControl speaker models with CVoiceControl?</B>
+<P>
+<P><B>A:</B> In general, yes. On 
+<A HREF="http://www.kiecza.de/daniel/">http://www.kiecza.de/daniel/</A> you can find
+a tool (<CODE>kvc2cvc</CODE>) to convert KVoiceControl speaker models to CvoiceControl speaker models.
+<B>Important:</B> The microphone calibration tools in the two programs differ from each other!
+This may lead to different recording results and therefore KVoiceControl speaker models may
+prove unusable in CVoiceControl. Nevertheless, you can convert the speaker model using the
+tool mentioned above, and give it a try...
+<P><B>Q:</B> <B>CVoiceControl rejects too many utterances. What can I do?</B>
+<P>
+<P><B>A:</B> Most likely this happens because the recognition score threshold is too small.
+You can adjust this threshold in the configuration file <CODE>config</CODE> in the directory
+<CODE>.cvoicecontrol</CODE> below your home directory. Increase the score threshold value by
+about 5 to 10 (you have to play with it). Increasing the value too much will decrease recognition
+speed and also recognition performance!
+<P><B>Q:</B> <B>How can I make sure my sound card and sound driver work properly?</B>
+<P>
+<P><B>A:</B> A quick and easy check is to type the following command at a command prompt:
+<BLOCKQUOTE><CODE>
+<PRE>
+  cat /dev/sndstat
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If you see something like
+<BLOCKQUOTE><CODE>
+<PRE>
+  cat: /dev/sndstat: Operation not supported by device
+</PRE>
+</CODE></BLOCKQUOTE>
+
+then your sound card is definitively not installed properly!
+<P>Output similar to the following indicates that the sound card should work:
+<BLOCKQUOTE><CODE>
+<PRE>
+  Card config: 
+  Yamaha OPL3-SAx at 0x530 irq 7 drq 0,1
+  OPL3-SA MIDI at 0x330 irq 5
+  OPL-2/OPL-3 FM at 0x388
+  
+  Audio devices:
+  0: MS Sound System (CS4231) (DUPLEX)
+  1: Shadow of audio device #0 (DUPLEX)
+  
+  Synth devices:
+  0: Yamaha OPL-3
+  
+  Midi devices:
+  0: OPL3-SA (MPU401)
+  
+  Timers:
+  0: System clock
+  1: MS Sound System (CS4231)
+  
+  Mixers:
+  0: MS Sound System (CS4231)
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Then, to make sure that your microphone (make sure you HAVE one and 
+that it is connected in the right place) is functioning you can
+use the following method to retrieve a quick recording.
+Please see section 
+<A HREF="index-4.html#sound-recording">Sound Recording</A>
+for information about accessing the microphone device.
+<P>Start the recording at a command prompt by typing:
+<BLOCKQUOTE><CODE>
+<PRE>
+  dd if=/dev/dspW of=/tmp/example.raw bs=8192 count=100
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Let the recording run for a few seconds then interrupt by pressing Ctrl-c.
+Now you can play the recorded stuff on the audio device by typing
+<BLOCKQUOTE><CODE>
+<PRE>
+  cat /tmp/example.raw > /dev/dspW
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>If you can hear what you expected your microphone works fine.
+If not, oops! (contact me)
+<P>
+<P><B>Q:</B> <B><EM>Configure</EM>, <EM>make</EM> and <EM>make install</EM> work fine,
+but when I try to launch <EM>microphone_config</EM> it just exits with
+<CODE>Segmentation Fault</CODE>. What can I do?</B>
+<P>
+<P><B>A:</B> Most probably a wrong version of the NCurses library is loaded
+at runtime.
+Microphone_config is compiled with version 5 of NCurses. The following
+instructions may help to solve this problem. Open a console and type:
+<BLOCKQUOTE><CODE>
+<PRE>
+  % ldd microphone_config
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The output should look similar to the following
+(I marked the interesting line with an arrow):
+<BLOCKQUOTE><CODE>
+<PRE>
+    libm.so.6 => /lib/libm.so.6 (0x40017000)
+->  libncurses.so.5 => /lib/libncurses.so.5 (0x40034000)
+    libc.so.6 => /lib/libc.so.6 (0x40072000)
+    /lib/ld-linux.so.2 => /lib/ld-linux.so.2 (0x40000000)
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>If the libncurses related entry in this list does not end in <CODE>.so.5</CODE>
+you basically need to correct the symbolic link <CODE>libncurses.so</CODE>
+to point to the correct version of the library.
+First, find the symbolic link (I marked the interesting lines in the
+output):
+<BLOCKQUOTE><CODE>
+<PRE>
+    % ldconfig -p | grep libncurses
+
+(1) libncurses.so.5 (libc6) => /lib/libncurses.so.5
+    libncurses.so.4 (libc6) => /lib/libncurses.so.4
+(2) libncurses.so (libc6) => /usr/lib/libncurses.so
+</PRE>
+</CODE></BLOCKQUOTE>
+
+We see from <CODE>(2)</CODE> that the link is located in <CODE>/usr/lib</CODE>
+and from <CODE>(1)</CODE> we see that version 5 of the library
+is located in <CODE>/lib</CODE>.
+Now, let us make the link point
+to the right version of <CODE>libncurses</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    % cd /usr/lib
+    % rm -f libncurses.so
+    % ln -s /lib/libncurses.so.5 libncurses.so
+    % ldconfig
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<EM>Microphone_config</EM> should work ok now.
+<B>Hint:</B> If you are unsure about what you are doing here, please
+consult a Unix expert about it. <B>You don't want to mess with the
+libraries!</B>
+<P>
+<P>
+<P>
+<P>
+<HR>
+<A HREF="index-6.html">Next</A>
+<A HREF="index-4.html">Previous</A>
+<A HREF="index.html#toc5">Contents</A>
+</BODY>
+</HTML>

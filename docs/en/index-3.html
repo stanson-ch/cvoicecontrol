@@ -1,0 +1,318 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The CVoiceControl Handbook: Usage </TITLE>
+ <LINK HREF="index-4.html" REL=next>
+ <LINK HREF="index-2.html" REL=previous>
+ <LINK HREF="index.html#toc3" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="index-4.html">Next</A>
+<A HREF="index-2.html">Previous</A>
+<A HREF="index.html#toc3">Contents</A>
+<HR>
+<H2><A NAME="s3">3. Usage </A></H2>
+
+<P>
+<H2><A NAME="ss3.1">3.1 Introduction </A>
+</H2>
+
+<P>
+<P>CVoiceControl consists of three executables:
+<P>
+<UL>
+<LI><CODE>microphone_config</CODE></LI>
+<LI><CODE>model_editor</CODE></LI>
+<LI><CODE>cvoicecontrol</CODE></LI>
+</UL>
+<P>First of all, you have to calibrate your microphone to use it
+for speech recognition. Use <CODE>microphone_config</CODE> to
+do this. When your sound hardware is prepared
+you can use <CODE>model_editor</CODE> to create speaker models.
+These are the main objects needed for the speech recognition
+process.
+<CODE>cvoicecontrol</CODE> is the actual speech recognition program.
+<P>These three components are described in the next three sections.
+Also the structure of the speaker models will be described more closely.
+<P>
+<P>
+<H2><A NAME="ss3.2">3.2 Microphone Calibration </A>
+</H2>
+
+<P>
+<P><CODE>Microphone_config</CODE> must be started by entering the
+command
+<BLOCKQUOTE><CODE>
+<PRE>
+% microphone_config
+</PRE>
+</CODE></BLOCKQUOTE>
+
+at a command prompt (Linux console,
+xterm, kvt etc.).
+First, the tool generates a list of available mixer and audio devices.
+If the tool fails at this time, it is because it
+could not find any appropriate mixer and/or audio devices in your system.
+In this case, make sure that your sound device is installed
+correctly and that your sound driver is working properly.
+<P>The microphone calibration process is divided into five steps.
+These steps can be run from the main menu. A step that has been
+completed successfully is displayed in bold face, a step that has not
+been completed is displayed in normal face and a step that can not be
+run at this time is not displayed at all.
+<P>
+<P>The five steps are:
+<P>
+<UL>
+<LI><CODE>Select Mixer Device</CODE></LI>
+<LI><CODE>Select Audio Device</CODE></LI>
+<LI><CODE>Adjust Mixer Levels</CODE></LI>
+<LI><CODE>Calculate Recording Thresholds</CODE></LI>
+<LI><CODE>Estimate Characteristics of Recording Channel</CODE></LI>
+</UL>
+<P>
+<P>If <CODE>microphone_config</CODE> managed to detect your audio hardware
+automatically the first two steps (<CODE>Select Mixer Device</CODE> and
+<CODE>Select Audio Device</CODE>) are displayed in bold, i.e. marked as
+``completed successfully''. (The selected device files are displayed
+in parantheses behind the menu entries.)
+In this case you may continue with step three.
+Nevertheless, if you have more than one sound card installed or if
+you have to select a non-default mixer or audio device, hit
+enter on the respective menu item and select a device from the list.
+In case of doubt, stick with the suggested settings!
+<P>Next, run step three: <CODE>Adjust Mixer Levels</CODE>.
+Here, we try to estimate good values for the mixer channels
+<EM>MICROPHONE IN (MIC)</EM> and (if available) <EM>INPUT GAIN (IGAIN)</EM>. You will be
+guided through the process by detailed information dialogs.
+<P>
+<BLOCKQUOTE><CODE>
+<B>To succeed, this step strongly relies on your cooperation!</B>
+</CODE></BLOCKQUOTE>
+<P>Initially, the MIC level is set to the maximum and the IGAIN level
+(if available) is set to the minimum value.
+<P>If an IGAIN channel is available then its level is increased while
+you speak at a conversational volume until the input signal is strong
+enough. Hint: Reasonable values for the IGAIN level on my system range
+between 1 and 8.
+<P>Next, the microphone level is reduced repeatedly while you speak at
+a ``maximum volume level'' until the incoming signal does not exceed
+an upper limit anymore. Hint: Reasonable values for the MIC level on
+my system range between 60 and 95.
+<P>Upon successful completion of this step, the next two steps are
+available for selection from the main menu.
+<P>Next, select <CODE>Calculate Recording Thresholds</CODE> from the menu.
+<P>During this step, we try to find reasonable energy levels at which to
+start the automatic voice recording and at which to stop the
+recording. Again, you will be guided through the process by detailed
+information dialogs.
+<P>In the next step <CODE>Estimate Characteristics of Recording Channel</CODE>
+the characteristics (like background noise etc.) of the recording
+channel are estimated. Again, there is online information to
+guide you through the process.
+<P>If all five steps have been completed successfully, the item <CODE>Write Configuration</CODE>
+becomes available in the main menu. Please select it to
+store all the gathered information to the file <CODE>config</CODE> which
+is put in the directory <CODE>.cvoicecontrol</CODE> in your home directory.
+The directory <CODE>.cvoicecontrol</CODE> is created if necessary.
+<P>If the configuration has been saved successfully you can leave the
+configuration tool by selecting <CODE>Exit</CODE> from the main menu.
+<P>
+<BLOCKQUOTE><CODE>
+<B>Congratulations, your microphone is set up for speech
+recognition!</B>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="ss3.3">3.3 Speaker Model Editor </A>
+</H2>
+
+<P>
+<P>CVoiceControl is a template-matching based speech recognition system, i.e.
+for each command that can be recognized there have to be some
+sample utterances which an incoming utterance can be compared to.
+All this stuff is collected in a so-called speaker model.
+<P>
+<P>A speaker model consists of a variable number of reference items
+where each reference item corresponds to a command that can be
+recognized. A reference item consists of a label (a transcription
+of what is said), a command (a unix command that is executed upon
+recognition of this reference item) and a variable number of sample
+utterances.
+<P>
+<P>Roughly speaking, to recognize an incoming utterance, it is compared to all sample
+utterances of all reference items in the active speaker model.
+If the sample utterances of one reference item are most similar to
+the incoming utterance (i.e. have the smallest distance score), this
+reference item will be chosen as recognition result.
+<P>
+<P>To launch the speaker model editor open a console and type:
+<BLOCKQUOTE><CODE>
+<PRE>
+% model_editor
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>From the main menu of the editor you can reset the current speaker
+model (<CODE>New Speaker Model</CODE>), load one from file
+(<CODE>Load Speaker Model</CODE>), edit the model (<CODE>Edit Speaker Model</CODE>),
+save it  (<CODE>Save Speaker Model</CODE>) and leave the editor
+(<CODE>Exit</CODE>).
+<P><B>Model Editor:</B>
+<P>The model editor shows the reference items of the current speaker
+model in a table view, one reference per line. A reference item
+in the table can be highlighted (selected) using the up and down
+cursor keys.
+At the bottom
+of the dialog a brief summary of keyboard commands is displayed
+for your convenience. Press <CODE>a</CODE> to add a new reference item to
+the model, press <CODE>d</CODE> to delete the currently highlighted item,
+Press <CODE>Enter</CODE> to edit the currently highlighted item and press
+<CODE>b</CODE> to return to the main menu.
+So for example, to add and edit a new reference item,
+please press <CODE>a</CODE> followed by <CODE>Enter</CODE>.
+<P><B>Edit Speaker Model Item:</B>
+<P>Selecting a reference item by pressing <CODE>Enter</CODE> opens the
+item editor dialog. This dialog displays the <EM>label</EM> and
+<EM>command</EM> of the selected item as well as a list of donated
+sample utterances. A brief summary of keyboard
+commands is displayed at the bottom.
+<P>Sample utterances in the list view can be highlighted using the up
+and down cursor keys.
+To record a new sample utterance press <CODE>r</CODE>. The recording is
+then done automatically, i.e. no further keyboard interaction is
+required to record the utterance. <B>Note:</B> After pressing <CODE>r</CODE> you
+should wait a second or so before starting to talk! This is because
+an audio buffer needs to be filled before the actual automatic recording
+can be started!
+To delete a highlighted sample utterance press <CODE>d</CODE>, to play it
+press <CODE>Enter</CODE>.
+To edit the <EM>label</EM> string of the current item press <CODE>l</CODE>.
+To edit the <EM>command</EM> string press <CODE>c</CODE>.
+To leave the current dialog press <CODE>b</CODE>.
+<P>
+<BLOCKQUOTE><CODE>
+<B>Important: Listen to every utterance you record to make
+sure that nothing has been cut off at the boundaries! If many
+utterances are cut off, please rerun the microphone configuration
+tool!</B>
+</CODE></BLOCKQUOTE>
+<P>
+<P><B>Note:</B> To ensure a good recognition quality, a minimum
+number of sample utterances per reference item is required. By
+default, the minimum number is set to ``4''.
+<P>
+<P><B>Note:</B> Recognized commands are executed
+<EM>in the foreground</EM> by default. This means that the speech
+recognizer blocks until the executed command has finished! This
+behaviour is required because many sound cards do not allow for
+recording and playing at the same time. So, if one wants to output
+any acoustic reaction to the sound card, the speech recognizer will
+need to wait until the command was executed before continuing in
+auto recording mode.
+If you
+want to have the speech recognizer run a command in the background and
+continue with recognition you <B>have to</B> append a ``&amp;'' to the
+command!
+<P>By the way, the command may consist of a sequence of commands separated
+by ``;''.
+<P>
+<P>
+<BLOCKQUOTE>
+<B>Important:</B> If a reference item has been recognized
+by the speech recognizer the associated command will be executed!
+There is <B>no</B> guarantee that the recognition result is correct.
+Also, the speech recognizer does <B>not</B> check whether the execution of
+a command would harm your system (we talk about commands like <CODE>rm</CODE>). Thus, it is
+the users responsibility to define harmless commands in the
+speaker model and to make sure that the reference items in a
+speaker model are not too confusable!
+</BLOCKQUOTE>
+<P>
+<P>Once you have finished editing the speaker model, save it to disk
+via <CODE>Save Speaker Model</CODE> from the main menu. Note that speaker
+model files must have the extension <EM>.cvc</EM>. If you do not
+specify this extension it will be appended to the file name
+automatically!
+<P>
+<P>
+<H2><A NAME="ss3.4">3.4 Speech Recognizer </A>
+</H2>
+
+<P>
+<P>To start the speech recognizer open a console and type:
+<BLOCKQUOTE><CODE>
+<PRE>
+% cvoicecontrol &lt;model_file&gt;
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where <CODE>&lt;model_file&gt;</CODE> is the name
+of the speaker model you want to use.
+The speech recognizer enters auto recording mode automatically.
+<P><B>Note:</B> Make sure that no application needs access to the sound
+device at this time, as most sound devices only allow for exclusive
+access!
+<P>
+<P>After a command was recognized successfully the speech recognizer
+reenters automatic recording mode, being ready for the next speech
+command.
+<P>
+<P>To finish the program, you have to kill the speech recognizer explicitely
+by pressing <CODE>Ctrl-C</CODE> in the console where you started the recognizer
+or by issuing the command <CODE>killall cvoicecontrol</CODE> from any command prompt.
+<P><B>Hint:</B> There is also a special command name that can be used in a speaker model's
+reference item to finish cvoicecontrol. It is called <CODE>cvoicecontrol_off</CODE>.
+<P><B>Note:</B> The speech recognizer can be started in a special mode by
+specifying the command line option <CODE>--once</CODE>, i.e. by starting it
+the follow way:
+<BLOCKQUOTE><CODE>
+<PRE>
+% cvoicecontrol --once &lt;model_file&gt;
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>In this case, the speech recognizer will exit automatically after the
+first successful recognition run. The exit code of the program is set
+to the id number of the reference item that has been recognized.
+As an example let us consider a speaker model <CODE>yes-no.cvc</CODE> that
+contains two reference items. The first one being ``Yes'', the
+second one being ``No''. Invoked like
+<BLOCKQUOTE><CODE>
+<PRE>
+% cvoicecontrol --once yes-no.cvc
+</PRE>
+</CODE></BLOCKQUOTE>
+
+the speech recognizer returns 0 if ``Yes'' was recognized and 1 if
+``No'' was recognized. Using speech prompts in shell scripts is
+then straightforward. Example:
+<BLOCKQUOTE><CODE>
+<PRE>
+  #!/usr/bin/tcsh
+
+  cvoicecontrol --once yes-no.cvc
+  set result = $status
+
+  if ($result == "-1") then
+    echo "Error!"
+  else if ($result == "0") then
+    echo "You said yes"
+  else if ($result == "1")
+    echo "You said no"
+  endif
+
+  exit
+</PRE>
+</CODE></BLOCKQUOTE>
+<P><B>Note:</B> In a <CODE>tcsh</CODE> script the shell variable <CODE>status</CODE>
+always contains the exit code of the most recently executed
+command! To obtain the exit code in a <CODE>bash</CODE> script you have
+to use the special parameter $?.
+<P>
+<P><B>Have fun with CVoiceControl!</B>
+<P>
+<HR>
+<A HREF="index-4.html">Next</A>
+<A HREF="index-2.html">Previous</A>
+<A HREF="index.html#toc3">Contents</A>
+</BODY>
+</HTML>

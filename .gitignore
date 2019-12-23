@@ -1,0 +1,14 @@
+**/.deps/
+/autom4te.cache
+/compile
+/depcomp
+/install-sh
+/missing
+/aclocal.m4
+Makefile.in
+Makefile
+/config.h*
+/config.log
+/config.status
+/configure
+/stamp-h1

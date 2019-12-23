@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.9">
+ <TITLE>The CVoiceControl Handbook: Technical Issues </TITLE>
+ <LINK HREF="index-5.html" REL=next>
+ <LINK HREF="index-3.html" REL=previous>
+ <LINK HREF="index.html#toc4" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="index-5.html">Next</A>
+<A HREF="index-3.html">Previous</A>
+<A HREF="index.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="s4">4. Technical Issues </A></H2>
+
+<P>
+<H2><A NAME="sound-recording"></A> <A NAME="ss4.1">4.1 Sound Recording</A>
+</H2>
+
+<P>
+<P>Sound is recorded at 16 kHz, 16 bit, mono. This
+should be supported by any state-of-the-art standard sound card ?!
+<P><B>Note:</B>
+<P>To be able to record sound data (on a Linux system) you need to
+introduce a user group that is allowed to access the sound device.
+In the following explanation I will assume that <CODE>/dev/dspW</CODE> is the sound
+device we want to use, <CODE>audio</CODE> is the name of the group that we want to grant
+access to the sound device and <CODE>bill</CODE> is the user id of the user who wants to
+use CVoiceControl.
+<P>To introduce the user group <CODE>audio</CODE> and to add the user <CODE>bill</CODE> to this group and to
+make sure that the new group may record from the sound device, open
+a console window and type (as <CODE>root</CODE>):
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+  adduser --group audio
+  adduser bill audio
+  chgrp audio /dev/dspW
+  chmod g+r /dev/dspW
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Now "ls -l /dev/dspW" should output something like
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+  crw-rw--w-    1 root     audio     14,   5 Jan  9 22:38 /dev/dspW
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Then you have to restart Windows to complete the installation ;-)
+<P>For answers to further questions concerning Linux and sound have a
+look at the Linux Sound-HOWTO which is available from
+ftp://metalab.unc.edu/pub/Linux/docs/HOWTO/Sound-HOWTO
+<P>
+<H2><A NAME="ss4.2">4.2 Recognizer Details</A>
+</H2>
+
+<P>
+<P>
+<UL>
+<LI>Isolated word recognition
+</LI>
+<LI>Template matching using non-linear time normalization (DTW)
+<UL>
+<LI>DTW, using symmetric Sahoe&amp;Chiba warping function</LI>
+<LI>Starting corner sloppiness: 4</LI>
+<LI>Parallel warping planes and Branch&amp;Bound recognition</LI>
+<LI>Nearest neighbour wins template matching (roughly)</LI>
+</UL>
+
+</LI>
+<LI>Preprocessing:
+<UL>
+<LI>Hamming window</LI>
+<LI>Fast Hartley Transform (FFT) to calculate power spectrum</LI>
+<LI>(log) melscale coefficients</LI>
+<LI>Channel mean substraction</LI>
+<LI>IMPORTANT: Amplitude normalization is not yet performed
+on the wave data so it is important to keep about the
+same distance between microphone and mouth and to speak
+at about a constant loudness level</LI>
+</UL>
+</LI>
+</UL>
+<P>
+<HR>
+<A HREF="index-5.html">Next</A>
+<A HREF="index-3.html">Previous</A>
+<A HREF="index.html#toc4">Contents</A>
+</BODY>
+</HTML>

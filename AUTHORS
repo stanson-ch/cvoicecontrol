@@ -1,0 +1,26 @@
+======================================================================
+CVoiceControl AUTHORS                                <11 Feb 00 14:07>
+======================================================================
+
+
+******************************
+***    Main-Developers     ***
+******************************
+
+- Daniel Kiecza <daniel@kiecza.de>
+
+
+******************************
+***      Translations      ***
+******************************
+
+- (none)
+
+
+**********************************************************************
+CVoiceControl contains sourcecode from the following programs/classes:
+**********************************************************************
+
+hexedit 0.9.7   :(c) 1998, 1999 by Adam Rogoyski <apoc@laker.net>
+realfftf        :(c) 1993, by Philip VanBaren
+semaphore.c     :(c) 1995 UMASS CS Dept., by Tom Wagner <wagner@cs.umass.edu>
