@@ -22,6 +22,6 @@ int mkpath( const char * path, mode_t mode );
 int loadConfiguration();
 
 #define CONFIG_DIR	"~/.config/cvoicecontrol"
-#define CONFIG_FILE	CONFIG_DIR"/config"
+#define CONFIG_FILE	"config"
 
 #endif

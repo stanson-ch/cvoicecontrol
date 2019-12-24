@@ -58,6 +58,7 @@ int  initAudio();
 AudioDevices *scanAudioDevices();
 
 int openAudio();
+int readAudio( void * buf, size_t size );
 int getBlockMax();
 unsigned char *getUtterance(int *length);
 int playUtterance(unsigned char *wav, int length);

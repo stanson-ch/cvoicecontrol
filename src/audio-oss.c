@@ -256,6 +256,15 @@ int closeAudio()
   return(AUDIO_OK);
 }
 
+int readAudio( void * buf, size_t size )
+{
+    if( !is_open ) return -1;
+    int ret = read( fd_audio, buf, size );
+    if( ret < 0 ) return ret;
+    if( ret != size ) return -1;
+    return ret;
+}
+
 /********************************************************************************
  * get maximum value of a block of recorded audio data
  ********************************************************************************/
