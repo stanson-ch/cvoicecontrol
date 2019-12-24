@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/soundcard.h>
+#include <sys/syscall.h>
 
 #ifdef _AIX
 #include <sys/select.h>
@@ -118,6 +119,26 @@ void beep(  )
 int g_verbose = 0;
 int g_daemon = 0;
 
+const char *strAudioStatus( enum AudioStatus s )
+{
+    switch ( s )
+    {
+        case A_invalid:
+            return "Invalid";
+        case A_off:
+            return "Off";
+        case A_prefetching:
+            return "Prefetching";
+        case A_recording:
+            return "Recording";
+        case A_aborting:
+            return "Aborting";
+        case A_exiting:
+            return "Exiting";
+    }
+    return "Unknown";
+}
+
 /********************************************************************************
  * thread safe changing of the status of the audio recording thread
  ********************************************************************************/
@@ -192,7 +213,8 @@ enum AudioStatus setAudioStatus( enum AudioStatus s )
             break;
     }
 
-    if( g_verbose ) printf( "status: %d\n", A_status );
+    if( g_verbose ) printf( "%d: Set status: %s\n", syscall( SYS_gettid ),
+                            strAudioStatus( A_status ) );
 
     /* give up exclusive access to audio status */
     pthread_mutex_unlock( &mutex_A_status );
@@ -217,9 +239,14 @@ enum AudioStatus getAudioStatus(  )
 
 void waitForAudioStatus( enum AudioStatus s )
 {
+    if( g_verbose ) printf( "%d: Waiting for status %s\n", syscall( SYS_gettid ),
+                            strAudioStatus( s ) );
+
     pthread_mutex_lock( &mutex_A_status );
     while( A_status != s ) pthread_cond_wait( &cond_A_status, &mutex_A_status );
     pthread_mutex_unlock( &mutex_A_status );
+
+    if( g_verbose ) printf( "%d: Got status %s\n", syscall( SYS_gettid ), strAudioStatus( s ) );
 }
 
 /********************************************************************************
@@ -299,12 +326,12 @@ int main( int argc, char *argv[] )
     char *model_file;
 
     struct option long_options[] = {
-        {"daemon", no_argument, 0, 'd'},
-        {"once", no_argument, 0, 'o'},
-        {"verbose", no_argument, 0, 'v'},
-        {"version", no_argument, 0, 'V'},
-        {"help", no_argument, 0, 'h'},
-        {0, 0, 0, 0}
+        { "daemon", no_argument, 0, 'd' },
+        { "once", no_argument, 0, 'o' },
+        { "verbose", no_argument, 0, 'v' },
+        { "version", no_argument, 0, 'V' },
+        { "help", no_argument, 0, 'h' },
+        { 0, 0, 0, 0 }
     };
 
     int ret;
@@ -334,7 +361,7 @@ int main( int argc, char *argv[] )
 
     if( optind >= argc )
     {
-        printf( "\nPlease specify speakermodel.cvc file!\n\n" );
+        fprintf( stderr, "\nPlease specify speakermodel.cvc file!\n\n" );
         usage( argv[0] );
         return -1;
     }
@@ -380,6 +407,8 @@ int main( int argc, char *argv[] )
 
     pthread_mutex_init( &mutex_P_done, NULL );
     setPDone( 0 );
+
+    if( g_verbose ) printf( "%d: Starting threads...\n", syscall( SYS_gettid ) );
 
     /* create the three main threads */
 
@@ -525,8 +554,9 @@ void recognize( void )
      */
     initScoreQueue( &score_queue );
 
-    /* main loop of recognition thread */
+    if( g_verbose ) printf( "%d: Recognition thread started.\n", syscall( SYS_gettid ) );
 
+    /* main loop of recognition thread */
     while( running )
     {
         /*
@@ -536,6 +566,8 @@ void recognize( void )
         if( recognition_done )
         {
             int id = getResultID( &score_queue );
+
+            if( g_verbose ) printf( "%d: Recognized ID %d\n", syscall( SYS_gettid ), id );
 
             recognition_done = 0;
 
@@ -1174,6 +1206,8 @@ void preprocess( void )
     /* initialize preprocessing */
     initPreprocess(  );
 
+    if( g_verbose ) printf( "%d: Preprocessing thread started.\n", syscall( SYS_gettid ) );
+
     /* main loop of the preprocessing thread */
     while( running )
     {
@@ -1284,6 +1318,23 @@ void preprocess( void )
     /* free any allocated memory etc. */
 }
 
+/* find maximum absolute value in buffer */
+
+static inline signed short buf_max( const unsigned char *buf, int len )
+{
+    signed short max = 0;
+    signed short value;
+    int i;
+
+    for( i = 0; i < len - 1; i += 2 )
+    {
+        value = abs( ( signed short )( buf[i] | ( buf[i + 1] << 8 ) ) );
+        if( value > max ) max = value;
+    }
+
+    return max;
+}
+
 /********************************************************************************
  * audio recording thread
  ********************************************************************************/
@@ -1300,8 +1351,7 @@ void record( void )
 
     int prefetch_N = 5;
     int prefetch_pos = 0;
-    unsigned char prefetch_buf[FRAG_SIZE * prefetch_N];
-    void *prefetch = prefetch_buf;
+    unsigned char prefetch[prefetch_N][FRAG_SIZE];
 
     /*
      * a buffer of size 'FRAG_SIZE' that contains (raw) audio data which
@@ -1309,93 +1359,40 @@ void record( void )
      */
     unsigned char buffer_raw[FRAG_SIZE];
 
-    int new_start = 1;                           /* first if statement inside while loop initializes the recording */
+    int reset = 1;                               /* first if statement inside while loop initializes the recording */
 
     struct audio_buf_info info;
-    signed short max = 0;
-    signed short value;
+    int abort_queued = 0;
     int i;
 
-    /* main loop of the audio recording thread */
+    if( g_verbose ) printf( "%d: Listening thread started.\n", syscall( SYS_gettid ) );
 
+    if( openAudio(  ) == AUDIO_ERR )
+    {
+        fprintf( stderr, "AUDIO_ERR\n" );
+        return;
+    }
+
+    /* main loop of the audio recording thread */
     while( running )
     {
-        if( getAudioStatus(  ) == A_exiting )
+        if( reset )
         {
-            running = 0;
-            /* enqueue an 'abort'-type frame into queue1 */
-            enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_exit );
-            break;
-        }
+            /* pause */
 
-        if( getAudioStatus(  ) == A_aborting )
-        {
-            /*
-             * got message from recognition thread that the current recording
-             * wouldn't match any of the hypotheses, -> abort!
-             */
-
-            /* enqueue an 'abort'-type frame into queue1 */
-            enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_abort );
-
-            /* wait for audio signal to fall back to silence!! */
-
-            for( count = 0; count < CONSECUTIVE_NONSPEECH_BLOCKS_THRESHOLD; )
-            {
-                if( readAudio( buffer_raw, FRAG_SIZE ) < 0 )
-                {
-                    fprintf( stderr, "audio device read error!\n" );
-                    exit( -1 );
-                }
-
-                max = 0;
-                for( i = 0; i < FRAG_SIZE / 2 - 1; i += 2 )
-                {
-                    value = abs( ( signed short )( buffer_raw[i] | ( buffer_raw[i + 1] << 8 ) ) );
-                    if( value > max ) max = value;
-                }
-
-                //fprintf(stderr, "WAITING MAX: %d\n", max);
-
-                if( max <= stop_level ) count++;
-                else count = 0;
-            }
-
-            new_start = 1;
-        }
-
-        if( new_start )
-        {
-            closeAudio(  );
             count = 0;                           /* reset count */
             prefetch_pos = 0;                    /* reset position in audio prefetch buffer */
+            abort_queued = 0;
             setAudioStatus( A_off );             /* set status to A_off */
-            memset( prefetch_buf, 0x00, FRAG_SIZE * prefetch_N );
+            memset( prefetch, 0, sizeof( prefetch ) );
 
             /* wait at a semaphore for 'auto recording' request */
             waitForAutoRecordingRequest(  );
 
-            /*
-             * actually, opening the audio device here
-             * should be repeated a specified number of times
-             * in case it fails, (perhaps with a somewhat more
-             * professional delay than just using a for-loop ;-) )
-             * if opening fails a couple of times, turn off
-             * auto recording!!!!!
-             */
+            /* resume */
 
-            /* connect to microphone */
-            while( openAudio(  ) == AUDIO_ERR )
-            {
-                if( !running ) break;
-                fprintf( stderr, "AUDIO_ERR\n" );
-                sleep( 10 );
-            }
-
-            new_start = 0;
+            reset = 0;
         }
-
-        /* use 'select()' to connect to the audio device */
 
         /* ... read the data from the device */
         if( readAudio( buffer_raw, FRAG_SIZE ) < 0 )
@@ -1404,84 +1401,89 @@ void record( void )
             exit( -1 );
         }
 
-        if( getAudioStatus(  ) == A_prefetching )
+        switch ( getAudioStatus(  ) )
         {
-            /* prefetch data into a circular buffer ... */
+            case A_exiting:
+                /* enqueue an 'exit'-type frame into queue1 */
+                enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_exit );
+                running = 0;
+                break;
 
-            memcpy( prefetch + prefetch_pos * ( FRAG_SIZE ), buffer_raw, FRAG_SIZE );
-            prefetch_pos = ( prefetch_pos + 1 ) % prefetch_N;
+            case A_aborting:
+                /*
+                 * got message from recognition thread that the current recording
+                 * wouldn't match any of the hypotheses, -> abort!
+                 */
 
-            /* and check it for speech content */
+                /* enqueue an 'abort'-type frame into queue1 */
+                if( !abort_queued )
+                {
+                    enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_abort );
+                    abort_queued = 1;
+                }
 
-            max = 0;
-            for( i = 0; i < FRAG_SIZE / 2 - 1; i += 2 )
-            {
-                value = abs( ( signed short )( buffer_raw[i] | ( buffer_raw[i + 1] << 8 ) ) );
-                if( value > max ) max = value;
-            }
+                /* wait for audio signal to fall back to silence!! */
 
-            //fprintf(stderr, "MAX: %d\n", max);
+                if( buf_max( buffer_raw, FRAG_SIZE ) <= stop_level ) count++;
+                else count = 0;
 
-            if( max >= rec_level ) count++;
-            else count = 0;
+                if( count >= CONSECUTIVE_NONSPEECH_BLOCKS_THRESHOLD ) reset = 1;
 
-            if( count >= CONSECUTIVE_SPEECH_BLOCKS_THRESHOLD )  /* if speech detected ... */
-            {
-                count = 0;
+                break;
 
-                //fprintf(stderr, "Recording\n");
+            case A_prefetching:
+                /* prefetch data into a circular buffer ... */
+                memcpy( prefetch[prefetch_pos], buffer_raw, FRAG_SIZE );
+                prefetch_pos = ( prefetch_pos + 1 ) % prefetch_N;
 
-                /* ... start recording, ...  */
+                /* and check it for speech content */
 
-                setAudioStatus( A_recording );
+                if( buf_max( buffer_raw, FRAG_SIZE ) >= rec_level ) count++;
+                else count = 0;
 
-                /* ... extract the data from the prefetch buffer and insert it into queue1 */
+                if( count >= CONSECUTIVE_SPEECH_BLOCKS_THRESHOLD )  /* if speech detected ... */
+                {
+                    count = 0;
 
-                for( i = prefetch_pos; i < prefetch_pos + prefetch_N; i++ )
-                    enqueue( &queue1,
-                             prefetch + ( i % prefetch_N ) * FRAG_SIZE,
-                             FRAG_SIZE, ( i == prefetch_pos ? Q_start : Q_data ) );
-            }
-        }
-        else if( getAudioStatus(  ) == A_recording )    /* currently recording audio data ... */
-        {
-            /* check whether no more speech signal, then stop recording */
+                    /* ... extract the data from the prefetch buffer and insert it into queue1 */
 
-            max = 0;
-            for( i = 0; i < FRAG_SIZE / 2 - 1; i += 2 )
-            {
-                value = abs( ( signed short )( buffer_raw[i] | ( buffer_raw[i + 1] << 8 ) ) );
-                if( value > max ) max = value;
-            }
+                    for( i = prefetch_pos; i < prefetch_pos + prefetch_N; i++ )
+                        enqueue( &queue1, prefetch[i % prefetch_N], FRAG_SIZE,
+                                 ( i == prefetch_pos ? Q_start : Q_data ) );
 
-            //fprintf(stderr, "MAX: %d\n", max);
+                    /* ... start recording, ...  */
 
-            if( max <= stop_level ) count++;
-            else count = 0;
+                    setAudioStatus( A_recording );
+                }
+                break;
 
-            /*
-             * recording will be stopped,
-             * if more than a predefined number of non-speech blocks come in a row
-             */
+            case A_recording:                   /* currently recording audio data ... */
+                /* check whether no more speech signal, then stop recording */
 
-            if( count >= CONSECUTIVE_NONSPEECH_BLOCKS_THRESHOLD )
-            {
-                /* here we insert the last data chunk into queue1 */
-                enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_end );
+                if( buf_max( buffer_raw, FRAG_SIZE ) <= stop_level ) count++;
+                else count = 0;
 
-                count = 0;
-                /* reset count */
+                /*
+                 * recording will be stopped,
+                 * if more than a predefined number of non-speech blocks come in a row
+                 */
 
-                /* turn off recognition */
-                //fprintf(stderr, "Stopped\n");
+                if( count >= CONSECUTIVE_NONSPEECH_BLOCKS_THRESHOLD )
+                {
+                    /* here we insert the last data chunk into queue1 */
+                    enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_end );
 
-                new_start = 1;
-            }
-            else
-            {
-                /* insert the current chunk of data into queue1 */
-                enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_data );
-            }
+                    /* turn off recognition */
+                    reset = 1;
+                }
+                else
+                {
+                    /* insert the current chunk of data into queue1 */
+                    enqueue( &queue1, buffer_raw, FRAG_SIZE, Q_data );
+                }
+                break;
         }
     }
+
+    closeAudio(  );
 }
