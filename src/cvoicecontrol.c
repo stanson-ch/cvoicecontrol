@@ -276,7 +276,7 @@ void waitForAutoRecordingRequest(  )
 
 void usage( const char *prog )
 {
-    printf( PACKAGE " version " VERSION "\n" );
+    printf( "Version: " VERSION "\n" );
     printf( "Usage: %s [options] <speakermodel.cvc>\n", prog );
     printf( "Options:\n" );
     printf( "\t-o, --once     Run once, exit after first successfull recognition.\n" );
